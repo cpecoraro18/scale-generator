@@ -66,7 +66,8 @@ whole tone gives one exercise rather than six copies.
 
 ```
 index.html        markup and control panel
-favicon.svg       tab icon: three noteheads climbing like steps
+favicon.svg       tab icon: a metronome
+favicon.ico       same icon at 16/32/48px, for browsers without SVG favicons
 css/app.css       styling, including the print stylesheet
 js/theory.js      note spelling, scale library, modes, key signatures, key cycles
 js/patterns.js    the pattern engine (cells walked up an indexed scale ladder)

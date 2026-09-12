@@ -1,5 +1,8 @@
 # Store text with LF in the repo, check out with native endings.
 * text=auto
 
+# Never line-ending-normalise binaries.
+*.ico binary
+
 # Vendored dependency: leave it byte-for-byte as shipped upstream.
 vendor/vexflow.js -text

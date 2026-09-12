@@ -1,14 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Scale Workshop">
   <title>Scale Workshop</title>
   <rect width="32" height="32" rx="7" fill="#8b7cf6"/>
-  <!-- Three noteheads climbing like steps: a scale, both senses of the word.
-       Kept to big shapes and thick stems so it still reads at 16px. -->
-  <g fill="#191033">
-    <ellipse cx="8" cy="23.5" rx="4.3" ry="3.3" transform="rotate(-20 8 23.5)"/>
-    <rect x="10.4" y="14.5" width="2.5" height="9.4" rx="1.25"/>
-    <ellipse cx="16" cy="17.5" rx="4.3" ry="3.3" transform="rotate(-20 16 17.5)"/>
-    <rect x="18.4" y="8.5" width="2.5" height="9.4" rx="1.25"/>
-    <ellipse cx="24" cy="11.5" rx="4.3" ry="3.3" transform="rotate(-20 24 11.5)"/>
-    <rect x="26.4" y="2.5" width="2.5" height="9.4" rx="1.25"/>
-  </g>
+  <!-- A metronome: wedge body on a plinth, with the pendulum rod and its weight
+       leaning out of the top. Big shapes, no thin strokes and no interior detail,
+       so the silhouette still reads once a tab scales it to 16px. -->
+  <polygon points="12,10 20,10 25.2,23.8 6.8,23.8" fill="#191033"/>
+  <rect x="4.8" y="23.4" width="22.4" height="4.4" rx="1.5" fill="#191033"/>
+  <line x1="15.2" y1="22" x2="20.8" y2="3.2" stroke="#191033" stroke-width="3.1" stroke-linecap="round"/>
+  <rect x="16.8" y="4.8" width="6" height="3.4" rx="1.1" fill="#191033" transform="rotate(16.6 19.8 6.5)"/>
 </svg>
