@@ -38,6 +38,9 @@ pattern becomes its own exercise, engraved on screen and exportable.
 
 Keyboard: `space` plays/stops, `g` regenerates.
 
+If it saves you some practice-room time, there is a
+[Ko-fi](https://ko-fi.com/chrispecoraro) link in the top bar.
+
 ## Notation details
 
 Notes are spelled properly rather than by pitch class: each scale carries the
@@ -63,6 +66,7 @@ whole tone gives one exercise rather than six copies.
 
 ```
 index.html        markup and control panel
+favicon.svg       tab icon: three noteheads climbing like steps
 css/app.css       styling, including the print stylesheet
 js/theory.js      note spelling, scale library, modes, key signatures, key cycles
 js/patterns.js    the pattern engine (cells walked up an indexed scale ladder)

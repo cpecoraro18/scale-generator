@@ -28,7 +28,7 @@ body {
 /* ---- top bar -------------------------------------------------------- */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; padding: 14px 20px;
+  gap: 16px; padding: 14px 20px; flex-wrap: wrap;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, #1b1f28, #14171e);
   position: sticky; top: 0; z-index: 20;
@@ -40,6 +40,12 @@ body {
   background: var(--accent-soft); color: var(--accent);
   font-size: 20px; border: 1px solid #3a3160;
 }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.kofi {
+  color: var(--muted); font-size: 12.5px; text-decoration: none;
+  padding: 8px 10px; border-radius: 8px; white-space: nowrap;
+}
+.kofi:hover { color: var(--text); background: var(--panel-2); }
 .topbar h1 { margin: 0; font: 600 17px/1.2 var(--serif); letter-spacing: .2px; }
 .topbar p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
 

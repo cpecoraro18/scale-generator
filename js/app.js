@@ -369,7 +369,8 @@
 
     document.addEventListener('keydown', function (e) {
       var tag = e.target.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON') return;
+      // 'A' too, so space on the focused Ko-fi link doesn't start playback.
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return;
       if (e.code === 'Space') { e.preventDefault(); MG.player.playing ? (MG.player.stop(), setPlaying(false)) : play(); }
       if (e.key === 'g' || e.key === 'G') generate();
     });
