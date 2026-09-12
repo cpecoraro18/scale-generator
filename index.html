@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scale Workshop &mdash; pattern &amp; exercise generator</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">&#9834;</span>
+    <div>
+      <h1>Scale Workshop</h1>
+      <p>Pick a scale &mdash; get practice patterns as sheet music and MIDI.</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button id="btn-generate" class="btn btn-primary">Generate</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="panel" id="panel">
+
+    <section class="group">
+      <h2>Scale</h2>
+      <div class="row">
+        <label class="field">
+          <span>Root</span>
+          <select id="root"></select>
+        </label>
+        <label class="field">
+          <span>Octave</span>
+          <select id="octave"></select>
+        </label>
+      </div>
+      <label class="field">
+        <span>Scale</span>
+        <select id="scale"></select>
+      </label>
+      <div id="spelling" class="chips" aria-live="polite"></div>
+    </section>
+
+    <section class="group">
+      <h2>Modes</h2>
+      <label class="field">
+        <span>Run through</span>
+        <select id="modes">
+          <option value="off" selected>Chosen scale only</option>
+          <option value="relative">Every mode &mdash; same notes, root up each degree</option>
+          <option value="parallel">Every mode &mdash; same root throughout</option>
+        </select>
+      </label>
+      <label class="field" id="modecount-field" hidden>
+        <span>How many degrees <b id="modecount-out">7</b></span>
+        <input id="modecount" type="range" min="2" max="7" step="1" value="7">
+      </label>
+      <p class="note" id="modes-note" hidden></p>
+    </section>
+
+    <section class="group">
+      <h2>Shape</h2>
+      <div class="row">
+        <label class="field">
+          <span>Range</span>
+          <select id="octaves">
+            <option value="1">1 octave</option>
+            <option value="2" selected>2 octaves</option>
+            <option value="3">3 octaves</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Direction</span>
+          <select id="direction">
+            <option value="up">Up</option>
+            <option value="updown" selected>Up &amp; down</option>
+            <option value="down">Down</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Clef</span>
+          <select id="clef">
+            <option value="auto" selected>Auto</option>
+            <option value="treble">Treble</option>
+            <option value="bass">Bass</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Note value</span>
+          <select id="npb">
+            <option value="1">Quarters</option>
+            <option value="2" selected>Eighths</option>
+            <option value="3">Triplets</option>
+            <option value="4">Sixteenths</option>
+            <option value="6">Sextuplets</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">
+        <span>Tempo <b id="tempo-out">96</b> bpm</span>
+        <input id="tempo" type="range" min="40" max="240" step="2" value="96">
+      </label>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="keysig" checked> Use key signature</label>
+        <label class="check"><input type="checkbox" id="tonic" checked> End on the tonic</label>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Patterns</h2>
+      <div class="group-actions">
+        <button class="link" data-select="all">All</button>
+        <button class="link" data-select="none">None</button>
+        <button class="link" data-select="basic">Basics</button>
+      </div>
+      <div id="patterns" class="patterns"></div>
+    </section>
+
+    <section class="group">
+      <h2>Keys</h2>
+      <label class="field">
+        <span>Move through</span>
+        <select id="cycle">
+          <option value="single" selected>Chosen key only</option>
+          <option value="fourths">Cycle of fourths</option>
+          <option value="fifths">Cycle of fifths</option>
+          <option value="halfUp">Half steps up</option>
+          <option value="wholeUp">Whole steps up</option>
+          <option value="minorThirds">Minor thirds</option>
+          <option value="majorThirds">Major thirds</option>
+        </select>
+      </label>
+      <label class="field" id="keycount-field" hidden>
+        <span>How many keys <b id="keycount-out">12</b></span>
+        <input id="keycount" type="range" min="2" max="12" step="1" value="12">
+      </label>
+    </section>
+  </aside>
+
+  <main class="output">
+    <div class="toolbar">
+      <button id="btn-play" class="btn">&#9654; Play</button>
+      <button id="btn-stop" class="btn" disabled>&#9632; Stop</button>
+      <button id="btn-midi" class="btn">Download MIDI</button>
+      <button id="btn-print" class="btn">Print / PDF</button>
+      <span class="summary" id="summary"></span>
+    </div>
+    <div id="sheets" class="sheets"></div>
+    <p class="hint">
+      Drop the MIDI file into any DAW or notation app (MuseScore, Logic, Ableton, Sibelius)
+      to slow it down, loop it, or re-engrave it. Print to PDF for a paper practice sheet.
+    </p>
+  </main>
+</div>
+
+<script src="vendor/vexflow.js"></script>
+<script src="js/theory.js"></script>
+<script src="js/patterns.js"></script>
+<script src="js/midi.js"></script>
+<script src="js/notation.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+# Scale Workshop
+
+Pick a scale, get practice patterns back as engraved sheet music, playable audio,
+and downloadable MIDI. No build step, no server, no network: **double-click
+`index.html`**.
+
+## What it does
+
+Choose a root and a scale, tick the patterns you want, hit **Generate**. Each
+pattern becomes its own exercise, engraved on screen and exportable.
+
+- **38 scales** — major and its modes, harmonic/melodic minor and their modes,
+  pentatonics, blues, bebop scales, symmetric scales (whole tone, both
+  diminished, augmented, chromatic), plus Hungarian minor, Neapolitans, double
+  harmonic, hirajoshi, kumoi, in-sen.
+- **30 patterns** — straight scale; broken 3rds/4ths/5ths/6ths/7ths/octaves;
+  groupings (1-2-3-4, 1-2-3-5, 1-3-2-4, turns, five-in-a-row, zig-zags);
+  arpeggios from triads through sevenths to the extensions — 9ths, 11ths and
+  13ths, stacked thirds on every scale degree; chromatic approach notes and
+  enclosures; expanding intervals, tonic pedal, and random permutations.
+- **Modes** — run the chosen scale from every one of its scale degrees, either
+  *same notes, root up each degree* (C major → C ionian, D dorian, E phrygian …)
+  or *same root throughout* (C ionian, C dorian, C phrygian …); pick how many
+  degrees. Works on any scale, not just the major one — harmonic minor gives
+  Locrian ♮6, Ionian ♯5, Dorian ♯4, Phrygian dominant, Lydian ♯2, altered
+  diminished. Combines with key cycles, so you can take all seven modes round
+  all twelve keys.
+- **Key cycles** — run the same exercise through the cycle of fourths or fifths,
+  half steps, whole steps, minor or major thirds; pick how many keys.
+- **Range and rhythm** — 1–3 octaves, up / down / up-and-down, treble or bass
+  clef (auto-picked from the range), quarters through sextuplets, 40–240 bpm.
+  A pattern taller than the range you picked gets the room it needs — a 13th
+  arpeggio is two octaves tall however you set the slider — and each sheet says
+  the range it actually used.
+- **Output** — play it back with note-by-note highlighting, download MIDI (all
+  exercises in one file, or one at a time), save any sheet as SVG, or print to
+  PDF for a paper practice sheet.
+
+Keyboard: `space` plays/stops, `g` regenerates.
+
+## Notation details
+
+Notes are spelled properly rather than by pitch class: each scale carries the
+diatonic degree each note sits on, so E♭ major is `Eb F G Ab Bb C D` and the C
+altered scale is `C Db Eb Fb Gb Ab Bb` — not a bag of sharps. Symmetric scales,
+which don't fit seven letter names, fall back to plain sharps or flats matching
+the root instead of piling up double accidentals.
+
+Key signatures are used where the scale has one (major- and minor-flavoured
+scales); for blues, bebop, and symmetric scales the music is written in C with
+accidentals spelled out, which is how these are normally engraved. You can turn
+key signatures off entirely.
+
+Modes are spelled out of their parent scale rather than re-derived, so mode 3
+of E♭ major is `G Ab Bb C D Eb F G` — G phrygian, not a respelling of it — and
+the relative modes all share the parent's key signature, so D dorian out of C
+major is written with no accidentals at all. A rotation that matches a scale
+already in the library borrows its name; the rest are titled "<scale> mode N".
+Symmetric scales rotate onto themselves, so asking for the parallel modes of
+whole tone gives one exercise rather than six copies.
+
+## Files
+
+```
+index.html        markup and control panel
+css/app.css       styling, including the print stylesheet
+js/theory.js      note spelling, scale library, modes, key signatures, key cycles
+js/patterns.js    the pattern engine (cells walked up an indexed scale ladder)
+js/notation.js    VexFlow engraving: bars, systems, beams, tuplets, accidentals
+js/midi.js        standard MIDI file writer (format 0), written by hand
+js/audio.js       Web Audio playback
+js/app.js         UI wiring
+vendor/vexflow.js VexFlow 4.2.3, vendored so the app works offline
+                  (its MIT notice sits beside it, in VEXFLOW-LICENSE.txt)
+LICENSE           MIT, for everything above
+```
+
+## Adding a pattern
+
+A pattern is usually a *cell* of scale-step offsets repeated up the scale. In
+`js/patterns.js`:
+
+```js
+P('g1235', 'Digital pattern 1-2-3-5', 'Groupings',
+  'Classic bebop cell.', cellPattern([0, 1, 2, 4]), 4),
+```
+
+`[0, 1, 2, 4]` means degrees 1-2-3-5 relative to each starting step; the engine
+handles octaves, direction (descending mirrors the cell), and range. Stacked
+thirds are just wider cells — `[0, 2, 4, 6, 8, 10, 12]` is a 13th arpeggio —
+and a cell taller than the chosen range grows the range to whole octaves that
+fit it, so it always has somewhere to sit. For anything that leaves the scale —
+chromatic approaches, enclosures — a generator function returns
+`{ i: index, semi: -1 }` steps instead.
+
+## Adding a scale
+
+```js
+S('lydianDom', 'Lydian dominant', 'Melodic minor modes',
+  [0, 2, 4, 6, 7, 9, 10], [0, 1, 2, 3, 4, 5, 6], null),
+```
+
+Semitones from the root, then the letter-degree each note is spelled on, then
+`'major'` / `'minor'` / `null` for the key signature to use.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Chris Pecoraro.
+
+`vendor/vexflow.js` is a vendored, unmodified copy of
+[VexFlow](https://github.com/0xfe/vexflow) 4.2.3, which is separately MIT
+licensed — Copyright (c) Mohit Muthanna Cheppudira 2010. Its notice is kept
+alongside it in [vendor/VEXFLOW-LICENSE.txt](vendor/VEXFLOW-LICENSE.txt) and
+must stay with any copy you redistribute.
