@@ -3,10 +3,66 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scale Workshop &mdash; pattern &amp; exercise generator</title>
+<title>Scale Workshop &mdash; scale &amp; arpeggio practice sheet generator</title>
+<meta name="description" content="Free scale and arpeggio practice generator: pick a root, scale and pattern, get engraved sheet music, playback and MIDI. 38 scales, 30 patterns, every key.">
+<meta name="author" content="Chris Pecoraro">
+<meta name="theme-color" content="#12141a">
+<link rel="canonical" href="https://scales.chrispecmusic.com/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Scale Workshop">
+<meta property="og:url" content="https://scales.chrispecmusic.com/">
+<meta property="og:title" content="Scale Workshop &mdash; scale &amp; arpeggio practice sheet generator">
+<meta property="og:description" content="Free scale and arpeggio practice generator: pick a root, scale and pattern, get engraved sheet music, playback and MIDI. 38 scales, 30 patterns, every key.">
+<meta property="og:image" content="https://scales.chrispecmusic.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Scale Workshop: a C major broken-thirds exercise engraved as sheet music.">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Scale Workshop &mdash; scale &amp; arpeggio practice sheet generator">
+<meta name="twitter:description" content="Free scale and arpeggio practice generator: pick a root, scale and pattern, get engraved sheet music, playback and MIDI. 38 scales, 30 patterns, every key.">
+<meta name="twitter:image" content="https://scales.chrispecmusic.com/og-image.png">
+
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="css/app.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Scale Workshop",
+  "url": "https://scales.chrispecmusic.com/",
+  "description": "Free scale and arpeggio practice generator: pick a root, scale and pattern, get engraved sheet music, playback and MIDI. 38 scales, 30 patterns, every key.",
+  "applicationCategory": "MultimediaApplication",
+  "applicationSubCategory": "Music practice",
+  "operatingSystem": "Any browser",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "image": "https://scales.chrispecmusic.com/og-image.png",
+  "author": {
+    "@type": "Person",
+    "name": "Chris Pecoraro"
+  },
+  "license": "https://opensource.org/licenses/MIT",
+  "featureList": [
+    "Scale and arpeggio exercises engraved as sheet music",
+    "38 scales including modes, pentatonics, blues and bebop scales",
+    "30 practice patterns: broken intervals, groupings, arpeggios, enclosures",
+    "Every mode of any scale, and cycles through all twelve keys",
+    "Playback with note-by-note highlighting, pause, resume and loop",
+    "MIDI, SVG and printable PDF practice sheets"
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -169,6 +225,53 @@
     </p>
   </main>
 </div>
+
+<footer class="about">
+  <h2>Scale and arpeggio practice sheets, generated for any key</h2>
+  <p>
+    Scale Workshop turns a scale into practice material. Pick a root and a scale,
+    tick the patterns you want, and every pattern comes back engraved as sheet
+    music you can play back, download as a MIDI file, save as SVG, or print as a
+    PDF practice sheet. It runs entirely in your browser &mdash; nothing is
+    uploaded, nothing is installed, and it keeps working offline.
+  </p>
+  <h3>Scales</h3>
+  <p>
+    38 scales: major and its modes (ionian, dorian, phrygian, lydian, mixolydian,
+    aeolian, locrian), harmonic and melodic minor and their modes, major and minor
+    pentatonics, blues scales, the bebop scales, the symmetric scales (whole tone,
+    both diminished, augmented, chromatic), plus Hungarian minor, the Neapolitans,
+    double harmonic, hirajoshi, kumoi and in-sen.
+  </p>
+  <h3>Patterns</h3>
+  <p>
+    30 patterns: the straight scale; broken 3rds, 4ths, 5ths, 6ths, 7ths and
+    octaves; groupings such as 1-2-3-4, 1-2-3-5, 1-3-2-4, turns, five-in-a-row and
+    zig-zags; arpeggios from triads and sevenths out to 9ths, 11ths and 13ths,
+    stacked on every scale degree; chromatic approach notes and enclosures;
+    expanding intervals, tonic pedal and random permutations.
+  </p>
+  <h3>Keys, modes and rhythm</h3>
+  <p>
+    Run an exercise from every degree of its scale, and take it round the cycle of
+    fourths or fifths, half steps, whole steps, minor or major thirds &mdash; up to
+    all twelve keys in one sheet. One to three octaves, ascending, descending or
+    both, treble or bass clef, quarter notes through sixteenth-note sextuplets,
+    40 to 240 bpm.
+  </p>
+  <p class="colophon">
+    Built by Chris Pecoraro. Engraved with
+    <a href="https://github.com/0xfe/vexflow" rel="noopener">VexFlow</a>.
+    <a href="https://github.com/cpecoraro18/scale-generator" rel="noopener">Source on GitHub</a>.
+  </p>
+</footer>
+
+<noscript>
+  <p class="about">
+    Scale Workshop engraves the exercises in your browser, so JavaScript has to be
+    enabled for the generator to run.
+  </p>
+</noscript>
 
 <script src="vendor/vexflow.js"></script>
 <script src="js/theory.js"></script>

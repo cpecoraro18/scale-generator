@@ -44,6 +44,11 @@ Keyboard: `space` plays/pauses, `g` regenerates.
 If it saves you some practice-room time, there is a
 [Ko-fi](https://ko-fi.com/chrispecoraro) link in the top bar.
 
+Live at [scales.chrispecmusic.com](https://scales.chrispecmusic.com/), which is
+where the canonical URL, sitemap and link-preview card all point. Change the
+domain in `CNAME` and those four places in `index.html`, `robots.txt` and
+`sitemap.xml` need to follow.
+
 ## Notation details
 
 Notes are spelled properly rather than by pitch class: each scale carries the
@@ -71,6 +76,10 @@ whole tone gives one exercise rather than six copies.
 index.html        markup and control panel
 favicon.svg       tab icon: a metronome
 favicon.ico       same icon at 16/32/48px, for browsers without SVG favicons
+apple-touch-icon.png  180px icon for iOS home screens
+og-image.png      1200x630 link preview card, engraved by the app itself
+robots.txt        crawling rules, points at the sitemap
+sitemap.xml       the one page there is
 css/app.css       styling, including the print stylesheet
 js/theory.js      note spelling, scale library, modes, key signatures, key cycles
 js/patterns.js    the pattern engine (cells walked up an indexed scale ladder)
