@@ -26,7 +26,7 @@
     generate: $('btn-generate'), play: $('btn-play'), stop: $('btn-stop'),
     midi: $('btn-midi'), print: $('btn-print'), loop: $('loop'), link: $('btn-link'),
     panel: $('panel'), panelBtn: $('btn-panel'), panelClose: $('btn-panel-close'),
-    panelGenerate: $('btn-panel-generate'), scrim: $('scrim'),
+    panelGenerate: $('btn-panel-generate'), scrim: $('scrim'), audioNote: $('audio-note'),
     countin: $('countin'), metronome: $('metronome'), trainer: $('trainer'),
     trainerOut: $('trainer-out'), trainerNote: $('trainer-note'),
     patternFilter: $('pattern-filter'), patternCount: $('pattern-count')
@@ -445,6 +445,22 @@
     MG.player.loop = el.loop.checked;
     MG.player.play(scopeEvents(from, to), handlers, offset || 0);
     syncTransport();
+    checkAudio();
+  }
+
+  /* Resuming a suspended context is asynchronous, so this looks a moment
+     after playback starts and says so if the browser is still holding out. */
+  function checkAudio() {
+    setTimeout(function () {
+      var state = MG.player.audioState();
+      var blocked = !!state && state !== 'running';
+      el.audioNote.hidden = !blocked;
+      if (blocked) {
+        el.audioNote.textContent = 'Your browser is holding audio back \u2014 tap Play ' +
+          'once more. On an iPhone, check the ring/silent switch as well: it mutes ' +
+          'web audio however loud the volume is.';
+      }
+    }, 400);
   }
 
   function resumePlayback() {

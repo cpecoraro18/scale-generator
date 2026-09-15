@@ -21,12 +21,54 @@
     if (!actx) {
       var AC = window.AudioContext || window.webkitAudioContext;
       actx = new AC();
+      // iOS plays Web Audio in the "ambient" category, which the ring/silent
+      // switch mutes - so a phone with the switch flipped is silent however
+      // loud the volume is. Asking for "playback" opts out of that.
+      try {
+        if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      } catch (e) { /* older browsers have no audioSession */ }
       master = actx.createGain();
       master.gain.value = 0.8;
       master.connect(actx.destination);
     }
     return actx;
   }
+
+  /* Mobile browsers start an audio context suspended and only let it run
+     from inside a real gesture, so the first tap anywhere wakes it and pushes
+     a single silent sample through it - some of them do not count the
+     context as started until something has actually played. */
+  function unlock() {
+    var a = ctx();
+    var resumed = (a.state !== 'running' && a.resume) ? a.resume() : null;
+    try {
+      var src = a.createBufferSource();
+      src.buffer = a.createBuffer(1, 1, a.sampleRate);
+      src.connect(a.destination);
+      src.start(0);
+    } catch (e) { /* nothing to unlock */ }
+    return resumed;
+  }
+
+  var WAKERS = ['pointerdown', 'touchend', 'keydown'];
+
+  function stopWaking() {
+    if (!actx || actx.state !== 'running') return;
+    WAKERS.forEach(function (type) { document.removeEventListener(type, wake); });
+  }
+
+  /* A touch does not count as permission until the finger lifts, so these stay
+     attached until the context is genuinely running rather than coming off
+     after the first one that happened to fire. */
+  function wake() {
+    var resumed = unlock();
+    if (resumed && resumed.then) resumed.then(stopWaking, function () { /* next gesture */ });
+    else stopWaking();
+  }
+
+  WAKERS.forEach(function (type) {
+    document.addEventListener(type, wake, { passive: true });
+  });
 
   function hz(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 
@@ -101,7 +143,7 @@
      click and highlight still agrees about where we are. */
   function startAt(offset) {
     var a = ctx();
-    if (a.state === 'suspended') a.resume();
+    if (a.state !== 'running' && a.resume) a.resume();
     silence();
     clearTimer();
 
@@ -208,6 +250,10 @@
       this.position = Math.max(0, Math.min(time, state.duration));
       startAt(this.position);
     },
+
+    /* 'running' once the browser is really letting sound out, 'suspended'
+       while it is holding it back, null before anything has been asked for. */
+    audioState: function () { return actx ? actx.state : null; },
 
     /* Seconds into the loaded range, live while playing. */
     now: function () {
