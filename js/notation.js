@@ -84,7 +84,9 @@
     }
     var lead0 = probeLead(true), leadN = probeLead(false);
 
-    var width = Math.max(520, opts.width || 900);
+    // A phone column is nowhere near 520px, so the caller sets the floor it
+    // can afford; fewer bars per line beats a staff that scrolls sideways.
+    var width = Math.max(opts.minWidth || 520, opts.width || 900);
     var perLine = Math.max(1, Math.min(bars.length, Math.floor((width - 20 - lead0) / minBar)));
     // If a bar still won't fit, widen the canvas rather than cram it; the
     // sheet scrolls horizontally instead of printing notes on top of each other.

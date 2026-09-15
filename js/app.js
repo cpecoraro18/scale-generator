@@ -5,6 +5,8 @@
   var MG = window.MG;
   var BASIC = ['scale', 'thirds', 'g1234', 'triads'];
   var BEATS_PER_BAR = 4;
+  var MIN_SHEET = 260;          // narrowest staff we will engrave
+  var NARROW = '(max-width: 900px)';
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {
@@ -17,7 +19,9 @@
     modecountOut: $('modecount-out'), modesNote: $('modes-note'),
     sheets: $('sheets'), summary: $('summary'),
     generate: $('btn-generate'), play: $('btn-play'), stop: $('btn-stop'),
-    midi: $('btn-midi'), print: $('btn-print'), loop: $('loop')
+    midi: $('btn-midi'), print: $('btn-print'), loop: $('loop'),
+    panel: $('panel'), panelBtn: $('btn-panel'), panelClose: $('btn-panel-close'),
+    panelGenerate: $('btn-panel-generate'), scrim: $('scrim')
   };
 
   var current = null;   // { exercises: [{ ex, render, host }], events, opts }
@@ -159,8 +163,10 @@
     return list;
   }
 
+  /* The sheet is only as wide as the column it sits in - about 330px on a
+     phone - and the engraver puts fewer bars on a line to suit. */
   function sheetWidth() {
-    return Math.max(520, (el.sheets.clientWidth || 900) - 24);
+    return Math.max(MIN_SHEET, (el.sheets.clientWidth || 900) - 24);
   }
 
   function filename(ex, ext) {
@@ -198,7 +204,7 @@
 
       var res = MG.renderExercise(score, ex, {
         clef: ex.clef, keySpec: ex.keySpec, notesPerBeat: opts.notesPerBeat,
-        beatsPerBar: BEATS_PER_BAR, width: sheetWidth()
+        beatsPerBar: BEATS_PER_BAR, width: sheetWidth(), minWidth: MIN_SHEET
       });
       entries.push({
         ex: ex, render: res, host: score, sheet: sheet,
@@ -437,9 +443,36 @@
     });
   }
 
+  /* ---- setup drawer (phones) ------------------------------------------- */
+  /* At narrow widths the control panel slides over the page instead of
+     standing between the reader and the music. */
+  function isNarrow() { return window.matchMedia(NARROW).matches; }
+
+  function setPanel(open) {
+    document.body.classList.toggle('panel-open', open);
+    el.scrim.hidden = !open;
+    el.panelBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  /* Generating from the drawer closes it and puts the transport on screen,
+     so the exercises you just asked for are the next thing you see. */
+  function generateAndShow() {
+    generate();
+    setPanel(false);
+    if (isNarrow()) {
+      document.querySelector('.toolbar').scrollIntoView({ block: 'start' });
+    }
+  }
+
   /* ---- events ---------------------------------------------------------- */
   function bind() {
-    el.generate.addEventListener('click', generate);
+    el.panelBtn.addEventListener('click', function () {
+      setPanel(!document.body.classList.contains('panel-open'));
+    });
+    el.panelClose.addEventListener('click', function () { setPanel(false); });
+    el.scrim.addEventListener('click', function () { setPanel(false); });
+    el.panelGenerate.addEventListener('click', generateAndShow);
+    el.generate.addEventListener('click', generateAndShow);
     el.play.addEventListener('click', togglePlay);
     el.stop.addEventListener('click', stopPlayback);
     el.loop.addEventListener('change', function () { MG.player.loop = el.loop.checked; });
@@ -472,10 +505,14 @@
       });
     });
 
-    // Re-engrave on resize so systems stay justified to the window.
-    var t = null;
+    // Re-engrave on resize so systems stay justified to the window. Width
+    // only: a phone fires resize every time its URL bar slides away, and
+    // re-engraving the whole set for that is wasted work.
+    var t = null, lastWidth = window.innerWidth;
     window.addEventListener('resize', function () {
-      if (!current) return;
+      if (!current || window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      if (!isNarrow()) setPanel(false);
       clearTimeout(t);
       t = setTimeout(function () {
         var wasPlaying = MG.player.playing, wasPaused = MG.player.paused;
@@ -498,6 +535,10 @@
     });
 
     document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('panel-open')) {
+        setPanel(false);
+        return;
+      }
       var tag = e.target.tagName;
       // 'A' too, so space on the focused Ko-fi link doesn't start playback.
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return;

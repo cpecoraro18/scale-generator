@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Scale Workshop &mdash; scale &amp; arpeggio practice sheet generator</title>
 <meta name="description" content="Free scale and arpeggio practice generator: pick a root, scale and pattern, get engraved sheet music, playback and MIDI. 38 scales, 30 patterns, every key.">
 <meta name="author" content="Chris Pecoraro">
@@ -84,6 +84,10 @@
 
 <div class="app">
   <aside class="panel" id="panel">
+    <div class="panel-head">
+      <h2>Setup</h2>
+      <button id="btn-panel-close" class="btn" aria-label="Close setup">Done</button>
+    </div>
 
     <section class="group">
       <h2>Scale</h2>
@@ -200,17 +204,25 @@
         <input id="keycount" type="range" min="2" max="12" step="1" value="12">
       </label>
     </section>
+    <div class="panel-foot">
+      <button id="btn-panel-generate" class="btn btn-primary">Generate exercises</button>
+    </div>
   </aside>
 
   <main class="output">
     <div class="toolbar">
+      <button id="btn-panel" class="btn btn-setup" aria-expanded="false" aria-controls="panel">&#9881; Setup</button>
       <button id="btn-play" class="btn">&#9654; Play</button>
       <button id="btn-stop" class="btn" disabled>&#9632; Stop</button>
       <label class="check toolbar-check" title="Repeat whatever is playing &mdash; the whole set, or one exercise">
         <input type="checkbox" id="loop"> Loop
       </label>
-      <button id="btn-midi" class="btn">Download MIDI</button>
-      <button id="btn-print" class="btn">Print / PDF</button>
+      <button id="btn-midi" class="btn">
+        <span class="lbl-full">Download MIDI</span><span class="lbl-short">MIDI</span>
+      </button>
+      <button id="btn-print" class="btn">
+        <span class="lbl-full">Print / PDF</span><span class="lbl-short">Print</span>
+      </button>
       <span class="summary" id="summary"></span>
     </div>
     <div id="sheets" class="sheets"></div>
@@ -225,6 +237,8 @@
     </p>
   </main>
 </div>
+
+<div class="scrim" id="scrim" hidden></div>
 
 <footer class="about">
   <h2>Scale and arpeggio practice sheets, generated for any key</h2>

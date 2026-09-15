@@ -39,7 +39,12 @@ pattern becomes its own exercise, engraved on screen and exportable.
 - **Output** — download MIDI (all exercises in one file, or one at a time),
   save any sheet as SVG, or print to PDF for a paper practice sheet.
 
-Keyboard: `space` plays/pauses, `g` regenerates.
+- **On a phone** — the controls live in a drawer behind **Setup**, so the music
+  is the first thing on screen rather than 2,500px below the panel. Staves are
+  engraved to the width you actually have (fewer bars per line, no sideways
+  scrolling), and the play controls stay pinned to the top as you scroll.
+
+Keyboard: `space` plays/pauses, `g` regenerates, `esc` closes the drawer.
 
 If it saves you some practice-room time, there is a
 [Ko-fi](https://ko-fi.com/chrispecoraro) link in the top bar.
