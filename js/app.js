@@ -870,16 +870,21 @@
       });
     });
 
-    // Re-engrave on resize so systems stay justified to the window. Width
-    // only: a phone fires resize every time its URL bar slides away, and
-    // re-engraving the whole set for that is wasted work.
-    var t = null, lastWidth = window.innerWidth;
-    window.addEventListener('resize', function () {
-      if (!current || window.innerWidth === lastWidth) return;
-      lastWidth = window.innerWidth;
-      if (!isNarrow()) setPanel(false);
+    // Re-engrave when the column the sheets sit in actually changes width, so
+    // turning a phone on its side fits twice the music on a line. The width is
+    // read after the wait, not when the event arrives: a phone reports the old
+    // size for a moment after a rotation, and checking too early used to mean
+    // the re-engrave was never scheduled at all. Measuring the column rather
+    // than the window also ignores the URL bar sliding in and out.
+    var t = null, lastWidth = el.sheets.clientWidth;
+    function onViewportChange() {
+      if (!current) return;
       clearTimeout(t);
       t = setTimeout(function () {
+        var width = el.sheets.clientWidth;
+        if (width === lastWidth) return;
+        lastWidth = width;
+        if (!isNarrow()) setPanel(false);
         var wasPlaying = MG.player.playing, wasPaused = MG.player.paused;
         var at = MG.player.now(), keep = scope;
         MG.player.stop();
@@ -897,7 +902,18 @@
         }
         syncTransport();
       }, 220);
+    }
+
+    window.addEventListener('resize', onViewportChange);
+    // Rotation does not always fire a useful resize, and the new size is not
+    // always in place when it does, so look again a moment later.
+    window.addEventListener('orientationchange', function () {
+      onViewportChange();
+      setTimeout(onViewportChange, 400);
     });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewportChange);
+    }
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && e.target === el.patternFilter && el.patternFilter.value) {
