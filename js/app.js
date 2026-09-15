@@ -7,6 +7,10 @@
   var BEATS_PER_BAR = 4;
   var MIN_SHEET = 260;          // narrowest staff we will engrave
   var NARROW = '(max-width: 900px)';
+  // 48 exercises engrave in about 180ms and 336 in over a second, so that is
+  // where applying changes as you make them stops being free.
+  var AUTO_MAX = 48;
+  var STORE_KEY = 'scale-workshop:settings';
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {
@@ -19,7 +23,7 @@
     modecountOut: $('modecount-out'), modesNote: $('modes-note'),
     sheets: $('sheets'), summary: $('summary'),
     generate: $('btn-generate'), play: $('btn-play'), stop: $('btn-stop'),
-    midi: $('btn-midi'), print: $('btn-print'), loop: $('loop'),
+    midi: $('btn-midi'), print: $('btn-print'), loop: $('loop'), link: $('btn-link'),
     panel: $('panel'), panelBtn: $('btn-panel'), panelClose: $('btn-panel-close'),
     panelGenerate: $('btn-panel-generate'), scrim: $('scrim')
   };
@@ -174,9 +178,15 @@
       .replace(/[^A-Za-z0-9#\-]/g, '') + '.' + ext;
   }
 
+  /* The line under each sheet title, rebuilt whenever the tempo moves. */
+  function sheetSub(ex, opts) {
+    return ex.octaves + ' octave' + (ex.octaves > 1 ? 's' : '') +
+      ' \u00b7 ' + MG.RHYTHM[opts.notesPerBeat].label +
+      ' \u00b7 ' + opts.tempo + ' bpm \u00b7 ' + ex.notes.length + ' notes';
+  }
+
   function render(opts, exercises) {
     el.sheets.innerHTML = '';
-    var rhythm = MG.RHYTHM[opts.notesPerBeat];
     var entries = [];
 
     exercises.forEach(function (ex, exIndex) {
@@ -187,9 +197,7 @@
       head.className = 'sheet-head';
       head.innerHTML =
         '<h3 class="sheet-title">' + escapeHtml(ex.title) + '</h3>' +
-        '<span class="sheet-sub">' + ex.octaves + ' octave' + (ex.octaves > 1 ? 's' : '') +
-        ' &middot; ' + rhythm.label + ' &middot; ' + opts.tempo + ' bpm &middot; ' +
-        ex.notes.length + ' notes</span>' +
+        '<span class="sheet-sub">' + escapeHtml(sheetSub(ex, opts)) + '</span>' +
         '<div class="sheet-tools">' +
         '<button data-act="play" class="sheet-play" title="Play this exercise">&#9654;</button>' +
         '<button data-act="svg">SVG</button><button data-act="midi">MIDI</button></div>';
@@ -208,7 +216,8 @@
       });
       entries.push({
         ex: ex, render: res, host: score, sheet: sheet,
-        playBtn: head.querySelector('[data-act="play"]')
+        playBtn: head.querySelector('[data-act="play"]'),
+        sub: head.querySelector('.sheet-sub')
       });
       bindNoteClicks(score, res.noteEls, exIndex);
 
@@ -267,6 +276,7 @@
       entries.forEach(function (e) {
         bars += Math.ceil(e.ex.notes.length / (BEATS_PER_BAR * opts.notesPerBeat));
       });
+      clearStale();
       var modeCount = unitsFor(opts, opts.root).length;
       el.summary.textContent = entries.length + ' exercise' + (entries.length > 1 ? 's' : '') +
         ' · ' + opts.keys.length + ' key' + (opts.keys.length > 1 ? 's' : '') +
@@ -316,6 +326,7 @@
   var scope = null;      // { from, to }: inclusive entry indexes being played
   var lit = null;        // note element currently lit
   var litSheet = null;   // sheet that note belongs to
+  var litMark = null;    // { e, n } of that note, for retiming in place
 
   /* Events for entries from..to, rebased so the range starts at t = 0. */
   function scopeEvents(from, to) {
@@ -335,6 +346,7 @@
     var entry = current.entries[mark.e];
     var node = entry && entry.render.noteEls[mark.n];
     if (node && node.classList) { node.classList.add('vf-playing'); lit = node; }
+    litMark = mark;
     if (entry && entry.sheet !== litSheet) {
       if (litSheet) litSheet.classList.remove('is-playing');
       litSheet = entry.sheet;
@@ -345,6 +357,7 @@
 
   function clearHighlight() {
     highlight(null);
+    litMark = null;
     if (litSheet) { litSheet.classList.remove('is-playing'); litSheet = null; }
   }
 
@@ -443,6 +456,189 @@
     });
   }
 
+  /* ---- live tempo ------------------------------------------------------ */
+  /* Tempo changes nothing that is engraved, so the sheets stay as they are:
+     only the timeline and the bpm captions are rebuilt, and playback picks
+     up on the note it was already on. */
+  function applyTempo() {
+    if (!current) return;
+    current.opts.tempo = +el.tempo.value;
+    current.entries.forEach(function (entry) {
+      if (entry.sub) entry.sub.textContent = sheetSub(entry.ex, current.opts);
+    });
+    current.events = timeline(current.opts, current.entries);
+
+    var playing = MG.player.playing, paused = MG.player.paused;
+    if (!scope || !(playing || paused)) return;
+    var events = scopeEvents(scope.from, scope.to);
+    var at = 0;
+    for (var i = 0; litMark && i < events.length; i++) {
+      if (events[i].mark.e === litMark.e && events[i].mark.n === litMark.n) {
+        at = events[i].t;
+        break;
+      }
+    }
+    MG.player.loop = el.loop.checked;
+    if (playing) MG.player.play(events, handlers, at);
+    else MG.player.load(events, handlers, at);
+    syncTransport();
+  }
+
+  /* ---- settings: the URL hash, and what you used last ------------------ */
+  /* Everything in the panel is one query string. It lives in the location
+     hash so a setup can be bookmarked or sent to someone, and in storage so
+     the page reopens the way you left it. */
+  var SELECTS = [
+    ['root', 'root'], ['oct', 'octave'], ['scale', 'scale'], ['modes', 'modes'],
+    ['range', 'octaves'], ['dir', 'direction'], ['clef', 'clef'], ['note', 'npb'],
+    ['cycle', 'cycle']
+  ];
+  var RANGES = [['degrees', 'modecount'], ['keys', 'keycount'], ['bpm', 'tempo']];
+  var CHECKS = [['keysig', 'keysig'], ['tonic', 'tonic'], ['loop', 'loop']];
+
+  function serialize() {
+    var q = [];
+    SELECTS.concat(RANGES).forEach(function (f) {
+      q.push(f[0] + '=' + encodeURIComponent(el[f[1]].value));
+    });
+    CHECKS.forEach(function (f) { q.push(f[0] + '=' + (el[f[1]].checked ? '1' : '0')); });
+    var pats = [];
+    el.patterns.querySelectorAll('input:checked').forEach(function (cb) { pats.push(cb.value); });
+    q.push('p=' + pats.join(','));
+    return q.join('&');
+  }
+
+  function readSettings(str) {
+    var q = {};
+    String(str || '').replace(/^#/, '').split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      if (i > 0) q[pair.slice(0, i)] = decodeURIComponent(pair.slice(i + 1));
+    });
+    return q;
+  }
+
+  /* Anything unrecognised is ignored rather than trusted - the string may
+     have come from someone else's link, or from an older version. */
+  function applySettings(q) {
+    SELECTS.forEach(function (f) {
+      var sel = el[f[1]], v = q[f[0]];
+      if (v === undefined) return;
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === v) { sel.value = v; return; }
+      }
+    });
+    RANGES.forEach(function (f) {
+      var input = el[f[1]], v = parseFloat(q[f[0]]);
+      if (isNaN(v)) return;
+      input.value = Math.min(Math.max(v, +input.min), +input.max);
+    });
+    CHECKS.forEach(function (f) {
+      if (q[f[0]] !== undefined) el[f[1]].checked = q[f[0]] === '1';
+    });
+    if (q.p !== undefined) {
+      var wanted = q.p ? q.p.split(',') : [];
+      el.patterns.querySelectorAll('input').forEach(function (cb) {
+        cb.checked = wanted.indexOf(cb.value) >= 0;
+      });
+    }
+    MG.player.loop = el.loop.checked;
+    el.tempoOut.textContent = el.tempo.value;
+    el.keycountOut.textContent = el.keycount.value;
+    el.keycountField.hidden = el.cycle.value === 'single';
+  }
+
+  function restoreSettings() {
+    var stored = null;
+    try { stored = window.localStorage.getItem(STORE_KEY); } catch (e) { stored = null; }
+    // A link someone opened beats whatever this browser used last.
+    var str = location.hash.length > 1 ? location.hash : stored;
+    if (str) applySettings(readSettings(str));
+  }
+
+  var saveTimer = null;
+  function storeSettings() {
+    try { window.localStorage.setItem(STORE_KEY, serialize()); } catch (e) { /* private mode */ }
+  }
+
+  /* Storage remembers the setup; the hash is only written once something is
+     actually changed, so a first visit keeps the clean URL it arrived on. */
+  function saveSettings() {
+    storeSettings();
+    try {
+      history.replaceState(null, '', location.pathname + location.search + '#' + serialize());
+    } catch (e) { /* file:// in some browsers */ }
+  }
+
+  function shareLink() {
+    saveSettings();
+    var url = location.href.split('#')[0] + '#' + serialize();
+    function done() {
+      var label = el.link.querySelector('.lbl-full');
+      var short = el.link.querySelector('.lbl-short');
+      label.textContent = 'Copied';
+      short.textContent = 'Copied';
+      setTimeout(function () {
+        label.textContent = 'Copy link';
+        short.textContent = 'Link';
+      }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link:', url); });
+      return;
+    }
+    prompt('Copy this link:', url);
+  }
+
+  /* ---- applying changes as they are made ------------------------------- */
+  /* How many exercises the current settings would produce, without building
+     any of them. */
+  function plannedCount() {
+    var opts = readOpts();
+    return opts.keys.length * unitsFor(opts, opts.root).length * opts.patterns.length;
+  }
+
+  function markStale(count) {
+    el.generate.textContent = 'Generate ' + count + ' exercises';
+    el.generate.classList.add('is-stale');
+  }
+
+  function clearStale() {
+    el.generate.textContent = 'Generate';
+    el.generate.classList.remove('is-stale');
+  }
+
+  var regenTimer = null;
+  function scheduleRegen() {
+    clearTimeout(regenTimer);
+    regenTimer = setTimeout(function () {
+      var count = plannedCount();
+      // On a phone the controls sit in a drawer over the page, so there is
+      // nothing to see: its own Generate button does the work instead.
+      if (isNarrow() && document.body.classList.contains('panel-open')) {
+        markStale(count);
+        return;
+      }
+      if (count === 0 || count <= AUTO_MAX) generate();
+      else markStale(count);
+    }, 260);
+  }
+
+  /* One handler for the whole panel: save the setup, and either re-engrave
+     or, for tempo, just retime. */
+  var tempoTimer = null;
+  function onControlChange(ev) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveSettings, 400);
+    if (ev.target === el.tempo) {
+      // Dragging fires input continuously; retiming once at the end is plenty.
+      clearTimeout(tempoTimer);
+      tempoTimer = setTimeout(applyTempo, 120);
+      return;
+    }
+    scheduleRegen();
+  }
+
   /* ---- setup drawer (phones) ------------------------------------------- */
   /* At narrow widths the control panel slides over the page instead of
      standing between the reader and the music. */
@@ -475,7 +671,10 @@
     el.generate.addEventListener('click', generateAndShow);
     el.play.addEventListener('click', togglePlay);
     el.stop.addEventListener('click', stopPlayback);
-    el.loop.addEventListener('change', function () { MG.player.loop = el.loop.checked; });
+    el.loop.addEventListener('change', function () {
+      MG.player.loop = el.loop.checked;
+      saveSettings();
+    });
     el.print.addEventListener('click', function () { window.print(); });
     el.midi.addEventListener('click', function () {
       if (!current) generate();
@@ -484,6 +683,11 @@
       downloadMidi(opts, current.entries.map(function (e) { return e.ex; }),
         opts.root.name + '-' + opts.scale.id + '-exercises.mid');
     });
+
+    el.link.addEventListener('click', shareLink);
+    // The pattern list is inside the panel, so one delegated pair covers it.
+    el.panel.addEventListener('change', onControlChange);
+    el.panel.addEventListener('input', onControlChange);
 
     el.tempo.addEventListener('input', function () { el.tempoOut.textContent = el.tempo.value; });
     el.keycount.addEventListener('input', function () { el.keycountOut.textContent = el.keycount.value; });
@@ -548,6 +752,8 @@
   }
 
   fillControls();
+  restoreSettings();
+  storeSettings();      // a setup you opened is one you used
   showSpelling();
   syncModes();
   bind();

@@ -131,6 +131,8 @@ button { touch-action: manipulation; }
 .panel-head, .panel-foot, .scrim, .btn-setup, .lbl-short { display: none; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #14101f; font-weight: 650; }
 .btn-primary:hover { background: #9d90f8; border-color: #9d90f8; }
+/* A set too big to re-engrave on every keystroke: the button says how big. */
+.btn-primary.is-stale { box-shadow: 0 0 0 3px rgba(139, 124, 246, .28); }
 
 .toolbar {
   display: flex; align-items: center; gap: 9px; flex-wrap: wrap;

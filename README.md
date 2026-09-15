@@ -32,6 +32,16 @@ pattern becomes its own exercise, engraved on screen and exportable.
   A pattern taller than the range you picked gets the room it needs — a 13th
   arpeggio is two octaves tall however you set the slider — and each sheet says
   the range it actually used.
+- **Live controls** — changing anything in the panel re-engraves straight away.
+  The tempo slider is live in a stronger sense: it retimes playback and the bpm
+  captions without redrawing a note, and if something is playing it carries on
+  from the note it was on. Past 48 exercises the set is too slow to rebuild on
+  every keystroke, so **Generate** says how many it would make and waits to be
+  pressed.
+- **Setups are kept** — everything in the panel lives in the URL hash, so
+  **Copy link** hands someone the exact setup, and the page reopens with
+  whatever you had last. A link beats stored settings, and anything
+  unrecognised in one is ignored.
 - **Playback** — play the whole set with note-by-note highlighting, or hit the
   ▶ on a single sheet to practise that exercise alone. Pause and resume pick up
   on the note you stopped on, clicking any note starts from there, and **Loop**
