@@ -212,7 +212,10 @@ button { touch-action: manipulation; }
 .about .colophon { margin-top: 24px; font-size: 12px; }
 
 .empty { color: var(--muted); padding: 40px 4px; text-align: center; }
-.hint { color: var(--muted); font-size: 12px; max-width: 60ch; margin-top: 22px; }
+.hint {
+  color: var(--muted); font-size: 12px; max-width: 60ch;
+  margin: 22px auto 0; text-align: center;
+}
 .error {
   background: #3a1d1d; border: 1px solid #5d2b2b; color: #ffd9d9;
   padding: 10px 12px; border-radius: 8px; font-size: 13px;
