@@ -62,6 +62,10 @@ pattern becomes its own exercise, engraved on screen and exportable.
   engraved to the width you actually have (fewer bars per line, no sideways
   scrolling), and the play controls stay pinned to the top as you scroll.
 
+Each panel section folds away by its heading, and which ones you folded is
+remembered for next time (kept out of shared links, being your layout rather
+than part of the setup).
+
 Keyboard: `space` plays/pauses, `g` regenerates, `esc` closes the drawer.
 
 If it saves you some practice-room time, there is a

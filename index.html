@@ -89,8 +89,8 @@
       <button id="btn-panel-close" class="btn" aria-label="Close setup">Done</button>
     </div>
 
-    <section class="group">
-      <h2>Scale</h2>
+    <details class="group" data-section="scale" open>
+      <summary><h2>Scale</h2></summary>
       <div class="row">
         <label class="field">
           <span>Root</span>
@@ -106,10 +106,10 @@
         <select id="scale"></select>
       </label>
       <div id="spelling" class="chips" aria-live="polite"></div>
-    </section>
+    </details>
 
-    <section class="group">
-      <h2>Modes</h2>
+    <details class="group" data-section="modes" open>
+      <summary><h2>Modes</h2></summary>
       <label class="field">
         <span>Run through</span>
         <select id="modes">
@@ -123,10 +123,10 @@
         <input id="modecount" type="range" min="2" max="7" step="1" value="7">
       </label>
       <p class="note" id="modes-note" hidden></p>
-    </section>
+    </details>
 
-    <section class="group">
-      <h2>Shape</h2>
+    <details class="group" data-section="shape" open>
+      <summary><h2>Shape</h2></summary>
       <div class="row">
         <label class="field">
           <span>Range</span>
@@ -173,10 +173,10 @@
         <label class="check"><input type="checkbox" id="keysig" checked> Use key signature</label>
         <label class="check"><input type="checkbox" id="tonic" checked> End on the tonic</label>
       </div>
-    </section>
+    </details>
 
-    <section class="group">
-      <h2>Practice</h2>
+    <details class="group" data-section="practice" open>
+      <summary><h2>Practice</h2></summary>
       <label class="field">
         <span>Count-in</span>
         <select id="countin">
@@ -194,10 +194,10 @@
         Every time the loop comes round, the tempo goes up by this much,
         as far as 240 bpm.
       </p>
-    </section>
+    </details>
 
-    <section class="group">
-      <h2>Patterns</h2>
+    <details class="group" data-section="patterns" open>
+      <summary><h2>Patterns</h2></summary>
       <div class="group-actions">
         <button class="link" data-select="all">All</button>
         <button class="link" data-select="none">None</button>
@@ -208,10 +208,10 @@
              aria-label="Filter patterns">
       <p class="note" id="pattern-count" aria-live="polite"></p>
       <div id="patterns" class="patterns"></div>
-    </section>
+    </details>
 
-    <section class="group">
-      <h2>Keys</h2>
+    <details class="group" data-section="keys" open>
+      <summary><h2>Keys</h2></summary>
       <label class="field">
         <span>Move through</span>
         <select id="cycle">
@@ -228,7 +228,7 @@
         <span>How many keys <b id="keycount-out">12</b></span>
         <input id="keycount" type="range" min="2" max="12" step="1" value="12">
       </label>
-    </section>
+    </details>
     <div class="panel-foot">
       <button id="btn-panel-generate" class="btn btn-primary">Generate exercises</button>
     </div>

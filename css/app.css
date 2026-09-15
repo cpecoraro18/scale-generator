@@ -64,11 +64,32 @@ body {
 
 /* ---- control groups -------------------------------------------------- */
 .group { padding: 16px 0; border-bottom: 1px solid var(--line); }
-.group:last-child { border-bottom: 0; }
+/* The drawer footer is the panel's real last child, so :last-child would
+   never match the final group. */
+.group:last-of-type { border-bottom: 0; }
 .group h2 {
-  margin: 0 0 12px; font-size: 11px; font-weight: 700;
+  margin: 0; font-size: 11px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
 }
+
+/* Each group is a <details>, so folding one away is the browser's job and
+   the keyboard works without any help from us. */
+.group > summary {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; list-style: none; user-select: none;
+  padding: 2px 0; border-radius: 6px;
+}
+.group > summary::-webkit-details-marker { display: none; }
+.group > summary:hover h2 { color: var(--text); }
+.group > summary::after {
+  content: ""; margin-left: auto; width: 7px; height: 7px;
+  border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform .15s ease;
+}
+.group[open] > summary::after { transform: translateY(1px) rotate(-135deg); }
+.group > summary:hover::after { border-color: var(--text); }
+.group[open] > summary { margin-bottom: 12px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field { display: block; margin-bottom: 10px; }
 .field > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
@@ -261,6 +282,7 @@ button { touch-action: manipulation; }
   .patterns label, .check { padding: 9px 6px; font-size: 14px; }
   .patterns small { font-size: 12.5px; }
   .link { padding: 10px 0; font-size: 13.5px; }
+  .group > summary { padding: 8px 0; }
   .group-actions { gap: 18px; }
   .sheet-tools button { min-height: 36px; padding: 8px 11px; font-size: 12.5px; }
   .sheet-tools .sheet-play { min-width: 46px; min-height: 40px; font-size: 12px; }

@@ -11,6 +11,7 @@
   // where applying changes as you make them stops being free.
   var AUTO_MAX = 48;
   var STORE_KEY = 'scale-workshop:settings';
+  var SECTION_KEY = 'scale-workshop:sections';
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {
@@ -646,6 +647,28 @@
     el.keycountField.hidden = el.cycle.value === 'single';
   }
 
+  /* Which groups are folded away is this browser's business, not part of a
+     setup someone shares, so it is kept out of the link. */
+  function sectionEls() { return el.panel.querySelectorAll('[data-section]'); }
+
+  function saveSections() {
+    var shut = [];
+    sectionEls().forEach(function (d) {
+      if (!d.open) shut.push(d.getAttribute('data-section'));
+    });
+    try { window.localStorage.setItem(SECTION_KEY, shut.join(',')); } catch (e) { /* private mode */ }
+  }
+
+  function restoreSections() {
+    var raw = null;
+    try { raw = window.localStorage.getItem(SECTION_KEY); } catch (e) { raw = null; }
+    if (raw === null) return;
+    var shut = raw ? raw.split(',') : [];
+    sectionEls().forEach(function (d) {
+      d.open = shut.indexOf(d.getAttribute('data-section')) < 0;
+    });
+  }
+
   function restoreSettings() {
     var stored = null;
     try { stored = window.localStorage.getItem(STORE_KEY); } catch (e) { stored = null; }
@@ -796,6 +819,10 @@
     });
 
     el.link.addEventListener('click', shareLink);
+    // The toggle event does not bubble, so it is bound per group.
+    sectionEls().forEach(function (d) {
+      d.addEventListener('toggle', saveSections);
+    });
     // The pattern list is inside the panel, so one delegated pair covers it.
     el.panel.addEventListener('change', onControlChange);
     el.panel.addEventListener('input', onControlChange);
@@ -867,14 +894,17 @@
         return;
       }
       var tag = e.target.tagName;
-      // 'A' too, so space on the focused Ko-fi link doesn't start playback.
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return;
+      // 'A' too, so space on the focused Ko-fi link doesn't start playback,
+      // and 'SUMMARY' so it folds that group away instead.
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' ||
+          tag === 'A' || tag === 'SUMMARY') return;
       if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
       if (e.key === 'g' || e.key === 'G') generate();
     });
   }
 
   fillControls();
+  restoreSections();
   restoreSettings();
   storeSettings();      // a setup you opened is one you used
   applyPractice();
