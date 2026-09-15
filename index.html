@@ -150,11 +150,19 @@
     <div class="toolbar">
       <button id="btn-play" class="btn">&#9654; Play</button>
       <button id="btn-stop" class="btn" disabled>&#9632; Stop</button>
+      <label class="check toolbar-check" title="Repeat whatever is playing &mdash; the whole set, or one exercise">
+        <input type="checkbox" id="loop"> Loop
+      </label>
       <button id="btn-midi" class="btn">Download MIDI</button>
       <button id="btn-print" class="btn">Print / PDF</button>
       <span class="summary" id="summary"></span>
     </div>
     <div id="sheets" class="sheets"></div>
+    <p class="hint">
+      Play pauses and resumes where it left off. Each sheet has its own
+      &#9654; button to practise that exercise on its own, and clicking any
+      note starts playback from there.
+    </p>
     <p class="hint">
       Drop the MIDI file into any DAW or notation app (MuseScore, Logic, Ableton, Sibelius)
       to slow it down, loop it, or re-engrave it. Print to PDF for a paper practice sheet.

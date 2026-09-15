@@ -17,7 +17,7 @@
     modecountOut: $('modecount-out'), modesNote: $('modes-note'),
     sheets: $('sheets'), summary: $('summary'),
     generate: $('btn-generate'), play: $('btn-play'), stop: $('btn-stop'),
-    midi: $('btn-midi'), print: $('btn-print')
+    midi: $('btn-midi'), print: $('btn-print'), loop: $('loop')
   };
 
   var current = null;   // { exercises: [{ ex, render, host }], events, opts }
@@ -173,7 +173,7 @@
     var rhythm = MG.RHYTHM[opts.notesPerBeat];
     var entries = [];
 
-    exercises.forEach(function (ex) {
+    exercises.forEach(function (ex, exIndex) {
       var sheet = document.createElement('div');
       sheet.className = 'sheet';
 
@@ -185,6 +185,7 @@
         ' &middot; ' + rhythm.label + ' &middot; ' + opts.tempo + ' bpm &middot; ' +
         ex.notes.length + ' notes</span>' +
         '<div class="sheet-tools">' +
+        '<button data-act="play" class="sheet-play" title="Play this exercise">&#9654;</button>' +
         '<button data-act="svg">SVG</button><button data-act="midi">MIDI</button></div>';
       sheet.appendChild(head);
 
@@ -199,7 +200,15 @@
         clef: ex.clef, keySpec: ex.keySpec, notesPerBeat: opts.notesPerBeat,
         beatsPerBar: BEATS_PER_BAR, width: sheetWidth()
       });
-      entries.push({ ex: ex, render: res, host: score });
+      entries.push({
+        ex: ex, render: res, host: score, sheet: sheet,
+        playBtn: head.querySelector('[data-act="play"]')
+      });
+      bindNoteClicks(score, res.noteEls, exIndex);
+
+      head.querySelector('[data-act="play"]').addEventListener('click', function () {
+        toggleExercise(exIndex);
+      });
 
       head.querySelector('[data-act="svg"]').addEventListener('click', function () {
         downloadSvg(res.svg, filename(ex, 'svg'));
@@ -240,10 +249,10 @@
       el.sheets.innerHTML = '<div class="error">Pick at least one pattern.</div>';
       el.summary.textContent = '';
       current = null;
+      stopPlayback();
       return;
     }
-    MG.player.stop();
-    setPlaying(false);
+    stopPlayback();
     try {
       var exercises = buildAll(opts);
       var entries = render(opts, exercises);
@@ -257,6 +266,7 @@
         ' · ' + opts.keys.length + ' key' + (opts.keys.length > 1 ? 's' : '') +
         (modeCount > 1 ? ' · ' + modeCount + ' modes' : '') +
         ' · ' + bars + ' bars';
+      syncTransport();
     } catch (err) {
       el.sheets.innerHTML = '<div class="error">Could not engrave that: ' +
         escapeHtml(String(err && err.message || err)) + '</div>';
@@ -292,37 +302,147 @@
     MG.downloadBlob(new Blob([text], { type: 'image/svg+xml' }), name);
   }
 
-  /* ---- playback -------------------------------------------------------- */
-  var lit = null;
+  /* ---- transport ------------------------------------------------------- */
+  /* Playback always runs over a scope - the whole set, or a single exercise.
+     The player holds the position inside that scope, so pausing, resuming,
+     replaying one exercise or picking up from a clicked note never means
+     starting the set over. */
+  var scope = null;      // { from, to }: inclusive entry indexes being played
+  var lit = null;        // note element currently lit
+  var litSheet = null;   // sheet that note belongs to
+
+  /* Events for entries from..to, rebased so the range starts at t = 0. */
+  function scopeEvents(from, to) {
+    var out = [];
+    current.events.forEach(function (e) {
+      if (e.mark.e >= from && e.mark.e <= to) out.push(e);
+    });
+    var base = out.length ? out[0].t : 0;
+    return out.map(function (e) {
+      return { midi: e.midi, t: e.t - base, d: e.d, mark: e.mark };
+    });
+  }
+
   function highlight(mark) {
     if (lit) { lit.classList.remove('vf-playing'); lit = null; }
     if (!mark || !current) return;
     var entry = current.entries[mark.e];
     var node = entry && entry.render.noteEls[mark.n];
     if (node && node.classList) { node.classList.add('vf-playing'); lit = node; }
+    if (entry && entry.sheet !== litSheet) {
+      if (litSheet) litSheet.classList.remove('is-playing');
+      litSheet = entry.sheet;
+      litSheet.classList.add('is-playing');
+      litSheet.scrollIntoView({ block: 'nearest' });
+    }
   }
 
-  function setPlaying(on) {
-    el.play.disabled = on;
-    el.stop.disabled = !on;
-    if (!on) highlight(null);
+  function clearHighlight() {
+    highlight(null);
+    if (litSheet) { litSheet.classList.remove('is-playing'); litSheet = null; }
   }
 
-  function play() {
+  var handlers = {
+    onNote: highlight,
+    onPause: function () { syncTransport(); },
+    onEnd: function () { scope = null; clearHighlight(); syncTransport(); }
+  };
+
+  /* Paint every transport control from the player's state. */
+  function syncTransport() {
+    var p = MG.player;
+    el.play.innerHTML = p.playing ? '&#10073;&#10073; Pause'
+      : p.paused ? '&#9654; Resume' : '&#9654; Play';
+    el.stop.disabled = !(p.playing || p.paused);
+    if (!current) return;
+    current.entries.forEach(function (entry, i) {
+      if (!entry.playBtn) return;
+      var mine = !!scope && scope.from === i && scope.to === i;
+      entry.playBtn.innerHTML = mine && p.playing ? '&#10073;&#10073;' : '&#9654;';
+      entry.playBtn.title = mine && p.playing ? 'Pause'
+        : mine && p.paused ? 'Resume this exercise' : 'Play this exercise';
+      entry.playBtn.className = 'sheet-play' + (mine && (p.playing || p.paused) ? ' is-active' : '');
+    });
+  }
+
+  function startScope(from, to, offset) {
+    if (!current) return;
+    scope = { from: from, to: to };
+    MG.player.loop = el.loop.checked;
+    MG.player.play(scopeEvents(from, to), handlers, offset || 0);
+    syncTransport();
+  }
+
+  function resumePlayback() {
+    MG.player.loop = el.loop.checked;
+    MG.player.resume();
+    syncTransport();
+  }
+
+  function stopPlayback() {
+    MG.player.stop();
+    scope = null;
+    clearHighlight();
+    syncTransport();
+  }
+
+  /* Toolbar button: pause what is playing, resume what is paused, or start
+     the whole set from the top. */
+  function togglePlay() {
+    var p = MG.player;
+    if (p.playing) { p.pause(); return; }
+    if (p.paused) { resumePlayback(); return; }
     if (!current) generate();
     if (!current) return;
-    setPlaying(true);
-    MG.player.play(current.events, {
-      onNote: highlight,
-      onEnd: function () { setPlaying(false); }
+    startScope(0, current.entries.length - 1, 0);
+  }
+
+  /* Per-sheet button: the same three states, scoped to one exercise. */
+  function toggleExercise(i) {
+    var p = MG.player;
+    var mine = !!scope && scope.from === i && scope.to === i;
+    if (mine && p.playing) { p.pause(); return; }
+    if (mine && p.paused) { resumePlayback(); return; }
+    startScope(i, i, 0);
+  }
+
+  /* Click a note to pick up from there: inside the running scope when it
+     covers that exercise, otherwise on that exercise alone. */
+  function playFromNote(entryIndex, noteIndex) {
+    if (!current) return;
+    if (!scope || entryIndex < scope.from || entryIndex > scope.to) {
+      scope = { from: entryIndex, to: entryIndex };
+    }
+    var events = scopeEvents(scope.from, scope.to);
+    var at = 0;
+    for (var i = 0; i < events.length; i++) {
+      if (events[i].mark.e === entryIndex && events[i].mark.n === noteIndex) {
+        at = events[i].t;
+        break;
+      }
+    }
+    MG.player.loop = el.loop.checked;
+    MG.player.play(events, handlers, at);
+    syncTransport();
+  }
+
+  /* One delegated listener per sheet rather than one per notehead. */
+  function bindNoteClicks(host, noteEls, entryIndex) {
+    var index = new Map();
+    noteEls.forEach(function (node, i) { if (node) index.set(node, i); });
+    host.addEventListener('click', function (ev) {
+      var node = ev.target;
+      while (node && node !== host && !index.has(node)) node = node.parentNode;
+      if (node && index.has(node)) playFromNote(entryIndex, index.get(node));
     });
   }
 
   /* ---- events ---------------------------------------------------------- */
   function bind() {
     el.generate.addEventListener('click', generate);
-    el.play.addEventListener('click', play);
-    el.stop.addEventListener('click', function () { MG.player.stop(); setPlaying(false); });
+    el.play.addEventListener('click', togglePlay);
+    el.stop.addEventListener('click', stopPlayback);
+    el.loop.addEventListener('change', function () { MG.player.loop = el.loop.checked; });
     el.print.addEventListener('click', function () { window.print(); });
     el.midi.addEventListener('click', function () {
       if (!current) generate();
@@ -358,12 +478,22 @@
       if (!current) return;
       clearTimeout(t);
       t = setTimeout(function () {
-        var wasPlaying = MG.player.playing;
+        var wasPlaying = MG.player.playing, wasPaused = MG.player.paused;
+        var at = MG.player.now(), keep = scope;
         MG.player.stop();
-        setPlaying(false);
+        clearHighlight();
         current.entries = render(current.opts, current.entries.map(function (e) { return e.ex; }));
         current.events = timeline(current.opts, current.entries);
-        if (wasPlaying) play();
+        // The sheets are new elements, so the range is reloaded onto them -
+        // still at the note it was on before the re-engrave.
+        scope = keep;
+        if (scope && (wasPlaying || wasPaused)) {
+          MG.player.loop = el.loop.checked;
+          var events = scopeEvents(scope.from, scope.to);
+          if (wasPlaying) MG.player.play(events, handlers, at);
+          else MG.player.load(events, handlers, at);
+        }
+        syncTransport();
       }, 220);
     });
 
@@ -371,7 +501,7 @@
       var tag = e.target.tagName;
       // 'A' too, so space on the focused Ko-fi link doesn't start playback.
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return;
-      if (e.code === 'Space') { e.preventDefault(); MG.player.playing ? (MG.player.stop(), setPlaying(false)) : play(); }
+      if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
       if (e.key === 'g' || e.key === 'G') generate();
     });
   }

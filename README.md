@@ -32,11 +32,14 @@ pattern becomes its own exercise, engraved on screen and exportable.
   A pattern taller than the range you picked gets the room it needs — a 13th
   arpeggio is two octaves tall however you set the slider — and each sheet says
   the range it actually used.
-- **Output** — play it back with note-by-note highlighting, download MIDI (all
-  exercises in one file, or one at a time), save any sheet as SVG, or print to
-  PDF for a paper practice sheet.
+- **Playback** — play the whole set with note-by-note highlighting, or hit the
+  ▶ on a single sheet to practise that exercise alone. Pause and resume pick up
+  on the note you stopped on, clicking any note starts from there, and **Loop**
+  repeats whatever is playing — the set or the one exercise.
+- **Output** — download MIDI (all exercises in one file, or one at a time),
+  save any sheet as SVG, or print to PDF for a paper practice sheet.
 
-Keyboard: `space` plays/stops, `g` regenerates.
+Keyboard: `space` plays/pauses, `g` regenerates.
 
 If it saves you some practice-room time, there is a
 [Ko-fi](https://ko-fi.com/chrispecoraro) link in the top bar.
