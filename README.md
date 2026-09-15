@@ -18,6 +18,10 @@ pattern becomes its own exercise, engraved on screen and exportable.
   arpeggios from triads through sevenths to the extensions — 9ths, 11ths and
   13ths, stacked thirds on every scale degree; chromatic approach notes and
   enclosures; expanding intervals, tonic pedal, and random permutations.
+  A filter box narrows the list by name, description or group — every term has
+  to match, so `bebop` or `arp 13` gets you there — and **All** and **None**
+  then act on what the filter is showing. Anything ticked but filtered out of
+  sight is counted under the box rather than silently dropped.
 - **Modes** — run the chosen scale from every one of its scale degrees, either
   *same notes, root up each degree* (C major → C ionian, D dorian, E phrygian …)
   or *same root throughout* (C ionian, C dorian, C phrygian …); pick how many
@@ -42,6 +46,10 @@ pattern becomes its own exercise, engraved on screen and exportable.
   **Copy link** hands someone the exact setup, and the page reopens with
   whatever you had last. A link beats stored settings, and anything
   unrecognised in one is ignored.
+- **Practice room** — a count-in of one or two bars, a metronome click on every
+  beat (accented on the downbeat), and a speed trainer that winds the tempo up
+  by a few bpm every time the loop comes round, as far as 240. None of the
+  three redraws a note; they take hold on the spot, where the playhead is.
 - **Playback** — play the whole set with note-by-note highlighting, or hit the
   ▶ on a single sheet to practise that exercise alone. Pause and resume pick up
   on the note you stopped on, clicking any note starts from there, and **Loop**

@@ -176,12 +176,37 @@
     </section>
 
     <section class="group">
+      <h2>Practice</h2>
+      <label class="field">
+        <span>Count-in</span>
+        <select id="countin">
+          <option value="0" selected>None</option>
+          <option value="1">1 bar</option>
+          <option value="2">2 bars</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="metronome"> Metronome click</label>
+      <label class="field">
+        <span>Speed trainer <b id="trainer-out">off</b></span>
+        <input id="trainer" type="range" min="0" max="16" step="2" value="0">
+      </label>
+      <p class="note" id="trainer-note">
+        Every time the loop comes round, the tempo goes up by this much,
+        as far as 240 bpm.
+      </p>
+    </section>
+
+    <section class="group">
       <h2>Patterns</h2>
       <div class="group-actions">
         <button class="link" data-select="all">All</button>
         <button class="link" data-select="none">None</button>
         <button class="link" data-select="basic">Basics</button>
       </div>
+      <input id="pattern-filter" class="filter" type="search" autocomplete="off"
+             placeholder="Filter patterns &mdash; try thirds, bebop, 13th"
+             aria-label="Filter patterns">
+      <p class="note" id="pattern-count" aria-live="polite"></p>
       <div id="patterns" class="patterns"></div>
     </section>
 
@@ -231,7 +256,9 @@
     <div id="sheets" class="sheets"></div>
     <p class="hint">
       Changes apply as you make them, and the tempo slider retimes playback
-      without redrawing a note. Play pauses and resumes where it left off,
+      without redrawing a note. Under <b>Practice</b> there is a count-in, a
+      metronome click, and a speed trainer that winds the tempo up a little
+      every time the loop comes round. Play pauses and resumes where it left off,
       each sheet has its own &#9654; button to practise that exercise on its
       own, and clicking any note starts playback from there. <b>Copy link</b>
       saves the whole setup in a URL; the page also reopens with whatever you

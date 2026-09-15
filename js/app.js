@@ -25,10 +25,16 @@
     generate: $('btn-generate'), play: $('btn-play'), stop: $('btn-stop'),
     midi: $('btn-midi'), print: $('btn-print'), loop: $('loop'), link: $('btn-link'),
     panel: $('panel'), panelBtn: $('btn-panel'), panelClose: $('btn-panel-close'),
-    panelGenerate: $('btn-panel-generate'), scrim: $('scrim')
+    panelGenerate: $('btn-panel-generate'), scrim: $('scrim'),
+    countin: $('countin'), metronome: $('metronome'), trainer: $('trainer'),
+    trainerOut: $('trainer-out'), trainerNote: $('trainer-note'),
+    patternFilter: $('pattern-filter'), patternCount: $('pattern-count')
   };
 
   var current = null;   // { exercises: [{ ex, render, host }], events, opts }
+  var rows = [];        // one per pattern checkbox, for the filter
+  var headings = [];    // the group headings above them
+  var noMatch = null;   // shown when the filter matches nothing
 
   /* ---- populate controls ---------------------------------------------- */
   function fillControls() {
@@ -59,13 +65,14 @@
       groups[s.group].appendChild(o);
     });
 
-    var last = null;
+    var last = null, heading = null;
     MG.PATTERNS.forEach(function (p) {
       if (p.group !== last) {
         last = p.group;
-        var h = document.createElement('h3');
-        h.textContent = p.group;
-        el.patterns.appendChild(h);
+        heading = document.createElement('h3');
+        heading.textContent = p.group;
+        el.patterns.appendChild(heading);
+        headings.push(heading);
       }
       var label = document.createElement('label');
       var cb = document.createElement('input');
@@ -75,7 +82,53 @@
       span.innerHTML = '<b>' + p.name + '</b><small>' + p.desc + '</small>';
       label.appendChild(cb); label.appendChild(span);
       el.patterns.appendChild(label);
+      // What the filter box searches: everything written on the row.
+      rows.push({
+        label: label, box: cb, heading: heading,
+        text: (p.name + ' ' + p.desc + ' ' + p.group + ' ' + p.id).toLowerCase()
+      });
     });
+
+    noMatch = document.createElement('p');
+    noMatch.className = 'no-match';
+    noMatch.hidden = true;
+    el.patterns.appendChild(noMatch);
+  }
+
+  /* ---- filtering the pattern list -------------------------------------- */
+  /* Thirty checkboxes is a lot to read through when you know the name of the
+     one you want. Every term has to match, so "bebop arp" narrows twice. */
+  function filterPatterns() {
+    var query = el.patternFilter.value.trim().toLowerCase();
+    var terms = query ? query.split(/\s+/) : [];
+    var shown = 0, hiddenPicks = 0, picked = 0;
+
+    rows.forEach(function (row) {
+      var hit = terms.every(function (t) { return row.text.indexOf(t) >= 0; });
+      row.label.hidden = !hit;
+      if (hit) shown++;
+      if (row.box.checked) {
+        picked++;
+        if (!hit) hiddenPicks++;
+      }
+    });
+
+    headings.forEach(function (h) {
+      var visible = false;
+      rows.forEach(function (row) {
+        if (row.heading === h && !row.label.hidden) visible = true;
+      });
+      h.hidden = !visible;
+    });
+
+    noMatch.hidden = shown > 0;
+    noMatch.textContent = 'No pattern matches \u201c' + el.patternFilter.value.trim() + '\u201d.';
+
+    var parts = [query ? shown + ' of ' + rows.length + ' shown' : rows.length + ' patterns'];
+    parts.push(picked + ' selected');
+    // Otherwise a filter that hides a ticked row looks like it unticked it.
+    if (hiddenPicks) parts.push(hiddenPicks + ' not shown');
+    el.patternCount.textContent = parts.join(' \u00b7 ');
   }
 
   function selectedPatterns() {
@@ -364,6 +417,7 @@
   var handlers = {
     onNote: highlight,
     onPause: function () { syncTransport(); },
+    onLoop: function () { advanceTrainer(); },
     onEnd: function () { scope = null; clearHighlight(); syncTransport(); }
   };
 
@@ -463,13 +517,40 @@
   function applyTempo() {
     if (!current) return;
     current.opts.tempo = +el.tempo.value;
+    MG.player.grid = { beat: 60 / current.opts.tempo, perBar: BEATS_PER_BAR };
     current.entries.forEach(function (entry) {
       if (entry.sub) entry.sub.textContent = sheetSub(entry.ex, current.opts);
     });
     current.events = timeline(current.opts, current.entries);
+    rearmPlayback();
+  }
 
+  /* ---- practice settings ----------------------------------------------- */
+  /* The count-in, the click and the speed trainer change nothing that is
+     engraved, so they are handed to the player and playback is re-armed
+     where it stands. */
+  function applyPractice() {
+    var step = +el.trainer.value;
+    el.trainerOut.textContent = step ? '+' + step + ' bpm' : 'off';
+    el.trainerNote.hidden = !step;
+    if (step && !el.loop.checked) {
+      el.trainerNote.innerHTML = 'The speed trainer needs <b>Loop</b> switched on.';
+    } else {
+      el.trainerNote.textContent =
+        'Every time the loop comes round, the tempo goes up by this much, as far as ' +
+        el.tempo.max + ' bpm.';
+    }
+
+    MG.player.metronome = el.metronome.checked;
+    MG.player.countInBars = +el.countin.value;
+    MG.player.grid = { beat: 60 / (+el.tempo.value), perBar: BEATS_PER_BAR };
+  }
+
+  /* Re-arm the loaded range on the note the playhead is on, so a setting that
+     only affects sound takes hold without losing your place. */
+  function rearmPlayback() {
     var playing = MG.player.playing, paused = MG.player.paused;
-    if (!scope || !(playing || paused)) return;
+    if (!current || !scope || !(playing || paused)) return;
     var events = scopeEvents(scope.from, scope.to);
     var at = 0;
     for (var i = 0; litMark && i < events.length; i++) {
@@ -484,6 +565,18 @@
     syncTransport();
   }
 
+  /* The speed trainer: one nudge per time round the loop, up to the slider's
+     own ceiling. */
+  function advanceTrainer() {
+    var step = +el.trainer.value;
+    if (!step) return;
+    var next = Math.min(+el.tempo.max, +el.tempo.value + step);
+    if (next === +el.tempo.value) return;
+    el.tempo.value = next;
+    el.tempoOut.textContent = next;
+    applyTempo();
+  }
+
   /* ---- settings: the URL hash, and what you used last ------------------ */
   /* Everything in the panel is one query string. It lives in the location
      hash so a setup can be bookmarked or sent to someone, and in storage so
@@ -491,10 +584,14 @@
   var SELECTS = [
     ['root', 'root'], ['oct', 'octave'], ['scale', 'scale'], ['modes', 'modes'],
     ['range', 'octaves'], ['dir', 'direction'], ['clef', 'clef'], ['note', 'npb'],
-    ['cycle', 'cycle']
+    ['cycle', 'cycle'], ['count', 'countin']
   ];
-  var RANGES = [['degrees', 'modecount'], ['keys', 'keycount'], ['bpm', 'tempo']];
-  var CHECKS = [['keysig', 'keysig'], ['tonic', 'tonic'], ['loop', 'loop']];
+  var RANGES = [
+    ['degrees', 'modecount'], ['keys', 'keycount'], ['bpm', 'tempo'], ['train', 'trainer']
+  ];
+  var CHECKS = [
+    ['keysig', 'keysig'], ['tonic', 'tonic'], ['loop', 'loop'], ['click', 'metronome']
+  ];
 
   function serialize() {
     var q = [];
@@ -543,6 +640,7 @@
       });
     }
     MG.player.loop = el.loop.checked;
+    applyPractice();
     el.tempoOut.textContent = el.tempo.value;
     el.keycountOut.textContent = el.keycount.value;
     el.keycountField.hidden = el.cycle.value === 'single';
@@ -628,6 +726,11 @@
      or, for tempo, just retime. */
   var tempoTimer = null;
   function onControlChange(ev) {
+    // The filter only changes which rows you can see.
+    if (ev.target === el.patternFilter) {
+      filterPatterns();
+      return;
+    }
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveSettings, 400);
     if (ev.target === el.tempo) {
@@ -636,6 +739,13 @@
       tempoTimer = setTimeout(applyTempo, 120);
       return;
     }
+    // Nothing about the count-in, the click or the trainer is engraved.
+    if (ev.target === el.countin || ev.target === el.metronome || ev.target === el.trainer) {
+      applyPractice();
+      rearmPlayback();
+      return;
+    }
+    if (ev.target.type === 'checkbox' && ev.target.closest('.patterns')) filterPatterns();
     scheduleRegen();
   }
 
@@ -673,6 +783,7 @@
     el.stop.addEventListener('click', stopPlayback);
     el.loop.addEventListener('change', function () {
       MG.player.loop = el.loop.checked;
+      applyPractice();
       saveSettings();
     });
     el.print.addEventListener('click', function () { window.print(); });
@@ -703,9 +814,16 @@
     el.patterns.parentNode.querySelectorAll('[data-select]').forEach(function (b) {
       b.addEventListener('click', function () {
         var mode = b.getAttribute('data-select');
-        el.patterns.querySelectorAll('input').forEach(function (cb) {
-          cb.checked = mode === 'all' ? true : mode === 'none' ? false : BASIC.indexOf(cb.value) >= 0;
+        rows.forEach(function (row) {
+          // All and None work on the rows the filter is showing, so you can
+          // type "arp" and take the lot; Basics is the preset, so it is global.
+          if (mode === 'basic') row.box.checked = BASIC.indexOf(row.box.value) >= 0;
+          else if (!row.label.hidden) row.box.checked = mode === 'all';
         });
+        // Setting .checked in script fires no event, so say so ourselves.
+        filterPatterns();
+        saveSettings();
+        scheduleRegen();
       });
     });
 
@@ -739,6 +857,11 @@
     });
 
     document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && e.target === el.patternFilter && el.patternFilter.value) {
+        el.patternFilter.value = '';
+        filterPatterns();
+        return;
+      }
       if (e.key === 'Escape' && document.body.classList.contains('panel-open')) {
         setPanel(false);
         return;
@@ -754,6 +877,8 @@
   fillControls();
   restoreSettings();
   storeSettings();      // a setup you opened is one you used
+  applyPractice();
+  filterPatterns();
   showSpelling();
   syncModes();
   bind();

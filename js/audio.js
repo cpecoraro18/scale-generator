@@ -15,7 +15,7 @@
 
   // events are [{ midi, t, d, mark }] with t/d in seconds, t from the start
   // of whatever range is loaded.
-  var state = { events: [], handlers: null, t0: 0, duration: 0, at: -1 };
+  var state = { events: [], handlers: null, t0: 0, duration: 0, at: -1, from: 0 };
 
   function ctx() {
     if (!actx) {
@@ -54,6 +54,23 @@
     voices.push(o1, o2);
   }
 
+  /* A short blip on the beat: louder and higher on the first beat of a bar. */
+  function click(at, accent) {
+    var a = ctx();
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.18 : 0.1, at + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
+    g.connect(master);
+    var o = a.createOscillator();
+    o.type = 'square';
+    o.frequency.value = accent ? 1600 : 1100;
+    o.connect(g);
+    o.start(at);
+    o.stop(at + 0.07);
+    voices.push(o);
+  }
+
   function silence() {
     voices.forEach(function (v) { try { v.stop(); } catch (e) { /* already stopped */ } });
     voices = [];
@@ -79,7 +96,9 @@
     if (h && h.onNote) h.onNote(i >= 0 ? state.events[i].mark : null);
   }
 
-  /* Sound the loaded events from `offset` seconds in. */
+  /* Sound the loaded events from `offset` seconds in. A count-in delays the
+     music without moving it in the timeline: only t0 shifts, so every note,
+     click and highlight still agrees about where we are. */
   function startAt(offset) {
     var a = ctx();
     if (a.state === 'suspended') a.resume();
@@ -87,8 +106,26 @@
     clearTimer();
 
     var p = MG.player;
-    state.t0 = a.currentTime + LEAD - offset;
+    var grid = p.grid || { beat: 0.5, perBar: 4 };
+    var countIn = Math.max(0, p.countInBars || 0) * grid.perBar * grid.beat;
+    state.t0 = a.currentTime + LEAD + countIn - offset;
     state.at = -1;
+    state.from = offset;
+
+    var i, beats;
+    if (countIn > 0) {
+      beats = Math.round(countIn / grid.beat);
+      for (i = 0; i < beats; i++) {
+        click(state.t0 + offset - countIn + i * grid.beat, i % grid.perBar === 0);
+      }
+    }
+    if (p.metronome) {
+      // Exercises start on a barline, so beats are whole multiples from zero.
+      var first = Math.ceil(offset / grid.beat - 1e-9);
+      for (i = first; i * grid.beat < state.duration; i++) {
+        click(state.t0 + i * grid.beat, i % grid.perBar === 0);
+      }
+    }
     state.events.forEach(function (e) {
       // A note we are already in the middle of is not restarted; seeks land
       // on note starts, so this only trims the note that was cut by a pause.
@@ -102,7 +139,8 @@
 
     timer = setInterval(function () {
       var now = a.currentTime - state.t0;
-      notify(indexAt(now));
+      // During a count-in the clock is still short of the first note.
+      if (now >= state.from - 1e-3) notify(indexAt(now));
       if (now >= state.duration + TAIL) {
         if (p.loop) {
           startAt(0);
@@ -121,6 +159,9 @@
     playing: false,
     paused: false,
     loop: false,
+    metronome: false,          // click on every beat
+    countInBars: 0,            // bars of clicks before the music starts
+    grid: { beat: 0.625, perBar: 4 },   // seconds per beat, beats per bar
 
     /* Put a range on the transport parked at `offset`, without sounding it.
        handlers: { onNote, onEnd, onPause, onLoop } */
@@ -145,7 +186,7 @@
        that was sounding so resuming picks that note up whole. */
     pause: function () {
       if (!this.playing) return;
-      var now = actx ? actx.currentTime - state.t0 : 0;
+      var now = actx ? Math.max(state.from, actx.currentTime - state.t0) : 0;
       var i = indexAt(now);
       this.position = i >= 0 ? state.events[i].t : 0;
       silence();
